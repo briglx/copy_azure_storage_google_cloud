@@ -1,0 +1,58 @@
+{
+  "name": "azure-blob-copy-google-cloud",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "prepare": "husky install",
+    "format": "prettier --write .",
+    "format:diff": "prettier --list-different .",
+    "lint:bicep": "bicep build --stdout",
+    "lint:cspell": "cspell --config .cspell.json \"**/*.{js,json,md,sh,bicep}\"",
+    "lint:eslint": "eslint --config .eslintrc.js --cache .",
+    "lint": "eslint --config .eslintrc.js && npm run lint:cspell",
+    "lint:fix": "npm run lint -- --fix",
+    "clean": "rimraf \"node_modules\"",
+    "clean:install": "rimraf \"node_modules\" && npm install",
+    "spell": "cspell '*.md' '**/*.md' 'docs/*.md' 'docs/**/*.md'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": "18.17.0",
+    "npm": ">=9"
+  },
+  "devDependencies": {
+    "cspell": "^6.31.2",
+    "eslint": "^8.46.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.8.0",
+    "git-commit-msg-linter": "^4.2.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.3",
+    "prettier": "^3.0.0",
+    "rimraf": "^4.3.1"
+  },
+  "prettier": {
+    "trailingComma": "all",
+    "tabWidth": 2,
+    "semi": true,
+    "singleQuote": false,
+    "printWidth": 120,
+    "bracketSpacing": true,
+    "arrowParens": "avoid"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --config .eslintrc.js --fix"
+    ],
+    "**/*": [
+      "prettier --ignore-unknown --write",
+      "npm run spell --config .cspell.json --no-progress --no-summary"
+    ]
+  },
+  "dependencies": {
+    "npm": "^9.8.1"
+  }
+}

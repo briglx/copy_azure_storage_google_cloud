@@ -1,0 +1,43 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "cache": {
+    "useCache": true,
+    "cacheLocation": "./.cspell/.cspellcache",
+    "cacheStrategy": "content"
+  },
+  "ignorePaths": [
+    ".git",
+    ".prettierignore",
+    "*.{png,jpg,pdf,svg}",
+    "**/*.vsdx",
+    ".gitignore",
+    "devcontainer.json",
+    ".cspell.json",
+    "infra/abbreviations.json"
+  ],
+  "words": [
+    "abbrs",
+    "appservice",
+    "appserviceplan",
+    "appsettings",
+    "arrowparens",
+    "azurefunctions",
+    "azuretools",
+    "codespaces",
+    "devcontainers",
+    "dotnetcore",
+    "eastus",
+    "functionapp",
+    "getopt",
+    "keyvault",
+    "lamoreaux",
+    "longoptions",
+    "longopts",
+    "serverfarms",
+    "westus",
+    "visualstudio"
+  ],
+  "useGitignore": true,
+  "flagWords": ["hte"]
+}
