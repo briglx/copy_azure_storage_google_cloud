@@ -7,14 +7,13 @@
     "prepare": "husky install",
     "format": "prettier --write .",
     "format:diff": "prettier --list-different .",
-    "lint:bicep": "bicep build --stdout",
-    "lint:cspell": "cspell --config .cspell.json \"**/*.{js,json,md,sh,bicep}\"",
+    "lint:bicep": "./scripts/pre_commit_bicep.sh \"**/*.bicep\"",
+    "lint:spell": "cspell -- --config .cspell.json \"**/*.{js,json,md,sh,bicep}\"",
     "lint:eslint": "eslint --config .eslintrc.js --cache .",
-    "lint": "eslint --config .eslintrc.js && npm run lint:cspell",
+    "lint": "eslint --config .eslintrc.js && npm run lint:spell && npm run lint:bicep",
     "lint:fix": "npm run lint -- --fix",
     "clean": "rimraf \"node_modules\"",
-    "clean:install": "rimraf \"node_modules\" && npm install",
-    "spell": "cspell '*.md' '**/*.md' 'docs/*.md' 'docs/**/*.md'"
+    "clean:install": "rimraf \"node_modules\" && npm install"
   },
   "keywords": [],
   "author": "",
@@ -47,9 +46,12 @@
     "*.js": [
       "eslint --config .eslintrc.js --fix"
     ],
-    "**/*": [
+    "*.bicep": [
+      "./scripts/pre_commit_bicep.sh "
+    ],
+    "*": [
       "prettier --ignore-unknown --write",
-      "npm run spell --config .cspell.json --no-progress --no-summary"
+      "npm run lint:spell --no-progress --no-summary"
     ]
   },
   "dependencies": {

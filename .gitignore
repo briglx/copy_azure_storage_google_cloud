@@ -155,6 +155,9 @@ cython_debug/
 # Dependency directories
 node_modules/
 
+# Bicep build files
+infra/core/*/*.json
+infra/main.json
 
 # Others
 *.DS_Store
