@@ -12,6 +12,7 @@ lint_path(){
     local lint_script="./scripts/lint_bicep.sh"
 
     if [ -f "$lint_script" ]; then
+        # shellcheck source=./scripts/lint_bicep.sh
         source "$lint_script"
        
         lint_bicep "${paths[@]}"
