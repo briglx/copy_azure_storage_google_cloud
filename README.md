@@ -48,6 +48,8 @@ flowchart LR
 
 # Deploy Resources
 
+This project uses scripts to provision infrastructure, package, and deploy the application to Azure and Google Cloud.
+
 ## Prerequisites
 
 - Azure Subscription
@@ -56,7 +58,7 @@ flowchart LR
 
 ## Provisioning
 
-This project uses scripts to provision infrastructure, package, and deploy the application to Azure and Google Cloud. Running the following commands will get you started with deployment.
+Running the following commands will provision cloud resources for deploying the application.
 
 ```bash
 # Configure the environment variables. Copy `example.env` to `.env` and update the values
@@ -69,19 +71,13 @@ az login --tenant $AZURE_TENANT_ID
 
 # Provision infrastructure and the azd development environment
 ./scripts/devops.sh provision --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
-
-
 ```
 
 ## Deployment
 
-Function App
-
 ```bash
-
 # Package the app using the environment variables in .azure/env + deploy the code on Azure
 ./scripts/devops.sh deploy --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
-
 ```
 
 # Architecture Design Decisions

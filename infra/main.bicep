@@ -26,6 +26,7 @@ param applicationInsightsDashboardName string = ''
 param logAnalyticsName string = ''
 param appServicePlanName string = ''
 param apiServiceName string = ''
+param functionName string = 'ProcessBlobEvents'
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, applicationName, environmentName, location))
@@ -75,8 +76,8 @@ module eventGrid './core/pubsub/event-grid.bicep' = {
     name: '${abbrs.eventGridSystemTopic}${applicationName}-${environmentName}-${storageAccount.outputs.name}'
     location: location
     tags: tags
-    endpoint: '${functions.outputs.id}/functions/CopyBlob'
-    eventSubName: !empty(eventGridEventSubscriptionName) ? eventGridEventSubscriptionName : '${abbrs.eventGridEventSubscriptions}${resourceToken}-CopyBlobfunction'
+    endpoint: '${functions.outputs.id}/functions/${functionName}'
+    eventSubName: !empty(eventGridEventSubscriptionName) ? eventGridEventSubscriptionName : '${abbrs.eventGridEventSubscriptions}${resourceToken}-${functionName}'
     storageAccountId: storageAccount.outputs.id
   }
 }
