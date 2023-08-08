@@ -24,6 +24,7 @@
     "arrowparens",
     "azurefunctions",
     "azuretools",
+    "blobfunction",
     "blobstorage",
     "codespaces",
     "devcontainers",

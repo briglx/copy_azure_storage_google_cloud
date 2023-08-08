@@ -40,6 +40,7 @@
   "eventGridDomains": "evgd-",
   "eventGridDomainsTopics": "evgt-",
   "eventGridEventSubscriptions": "evgs-",
+  "eventGridSystemTopic": "evgst-",
   "eventHubNamespaces": "evhns-",
   "eventHubNamespacesEventHubs": "evh-",
   "hdInsightClustersHadoop": "hadoop-",

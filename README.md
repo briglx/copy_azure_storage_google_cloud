@@ -70,8 +70,7 @@ az login --tenant $AZURE_TENANT_ID
 # Provision infrastructure and the azd development environment
 ./scripts/devops.sh provision --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
 
-# Package the app using the environment variables in .azure/env + deploy the code on Azure
-./scripts/devops.sh deploy --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
+
 ```
 
 ## Deployment
@@ -80,12 +79,9 @@ Function App
 
 ```bash
 
-# Deploy the function app
-rg_name=<resource_group>
-app_name=<function_app_name>
-zip_file_path=<zip_file_path>
+# Package the app using the environment variables in .azure/env + deploy the code on Azure
+./scripts/devops.sh deploy --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
 
-az functionapp deployment source config-zip -g "$rg_name" -n "$app_name" --src "zip_file_path"
 ```
 
 # Architecture Design Decisions

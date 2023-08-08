@@ -20,7 +20,7 @@ param applicationName string
 param keyVaultName string = ''
 param storageAccountName string = ''
 param storageContainerName string = ''
-param eventGridName string = ''
+param eventGridEventSubscriptionName string = ''
 param applicationInsightsName string = ''
 param applicationInsightsDashboardName string = ''
 param logAnalyticsName string = ''
@@ -30,7 +30,6 @@ param apiServiceName string = ''
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, applicationName, environmentName, location))
 var tags = { 'app-name': applicationName, 'env-name': environmentName }
-var finalEventGridName = !empty(eventGridName) ? eventGridName : '${abbrs.eventGridDomainsTopics}${applicationName}-${environmentName}-${resourceToken}'
 
 // Resource Group
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -73,11 +72,11 @@ module eventGrid './core/pubsub/event-grid.bicep' = {
   name: 'events-module'
   scope: rg
   params: {
-    name: finalEventGridName
+    name: '${abbrs.eventGridSystemTopic}${applicationName}-${environmentName}-${storageAccount.outputs.name}'
     location: location
     tags: tags
-    endpoint: ''
-    eventSubName: '${finalEventGridName}-subs'
+    endpoint: '${functions.outputs.id}/functions/CopyBlob'
+    eventSubName: !empty(eventGridEventSubscriptionName) ? eventGridEventSubscriptionName : '${abbrs.eventGridEventSubscriptions}${resourceToken}-CopyBlobfunction'
     storageAccountId: storageAccount.outputs.id
   }
 }

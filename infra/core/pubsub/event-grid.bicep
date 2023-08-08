@@ -25,11 +25,11 @@ resource eventSubscription 'Microsoft.EventGrid/systemTopics/eventSubscriptions@
   properties: {
     destination: {
       properties: {
-        endpointUrl: endpoint
+        resourceId: endpoint
         maxEventsPerBatch: 1
         preferredBatchSizeInKilobytes: 64
       }
-      endpointType: 'WebHook'
+      endpointType: 'AzureFunction'
     }
     filter: {
       advancedFilters: []
