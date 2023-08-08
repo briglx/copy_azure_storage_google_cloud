@@ -1,8 +1,8 @@
 {
   "bindings": [
     {
-      "name": "myblob",
-      "type": "blobTrigger",
+      "name": "eventGridTrigger",
+      "type": "eventGridEvent",
       "direction": "in",
       "path": "samples-workitems/{name}",
       "source": "EventGrid",

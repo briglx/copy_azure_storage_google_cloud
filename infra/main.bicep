@@ -21,13 +21,16 @@ param keyVaultName string = ''
 param storageAccountName string = ''
 param storageContainerName string = ''
 param eventGridName string = ''
+param applicationInsightsName string = ''
+param applicationInsightsDashboardName string = ''
+param logAnalyticsName string = ''
 param appServicePlanName string = ''
 param apiServiceName string = ''
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, applicationName, environmentName, location))
 var tags = { 'app-name': applicationName, 'env-name': environmentName }
-var finalEventGridName = !empty(eventGridName) ? eventGridName : '${abbrs.eventGridDomainsTopics}${resourceToken}'
+var finalEventGridName = !empty(eventGridName) ? eventGridName : '${abbrs.eventGridDomainsTopics}${applicationName}-${environmentName}-${resourceToken}'
 
 // Resource Group
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -79,6 +82,19 @@ module eventGrid './core/pubsub/event-grid.bicep' = {
   }
 }
 
+// Monitor application with Azure Monitor
+module monitoring './core/monitor/monitoring.bicep' = {
+  name: 'monitoring'
+  scope: rg
+  params: {
+    location: location
+    tags: tags
+    logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
+    applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
+    applicationInsightsDashboardName: !empty(applicationInsightsDashboardName) ? applicationInsightsDashboardName : '${abbrs.portalDashboards}${resourceToken}'
+  }
+}
+
 
 /////////// Function App ///////////
 
@@ -86,7 +102,7 @@ module appServicePlan './core/host/appserviceplan.bicep' = {
   name: 'appserviceplan'
   scope: rg
   params: {
-    name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
+    name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${applicationName}-${environmentName}-${resourceToken}'
     location: location
     tags: tags
     sku: {
@@ -100,14 +116,16 @@ module functions './core/host/functions.bicep' = {
   name: '${applicationName}-functions'
   scope: rg
   params: {
-    name: !empty(apiServiceName) ? apiServiceName : '${abbrs.webSitesFunctions}api-${resourceToken}'
+    name: !empty(apiServiceName) ? apiServiceName : '${abbrs.webSitesFunctions}${applicationName}-${environmentName}-${resourceToken}'
     location: location
     tags: tags
     alwaysOn: false
-    // appSettings: {
-    //   EVENT_GRID_ENDPOINT: eventGrid.properties.endpoint
-    //   EVENT_GRID_TOPIC_KEY: eventGrid.listKeys().key1
-    // }
+    appSettings: {
+      AzureWebJobsFeatureFlags: 'EnableWorkerIndexing'
+      // EVENT_GRID_ENDPOINT: eventGrid.properties.endpoint
+      // EVENT_GRID_TOPIC_KEY: eventGrid.listKeys().key1
+    }
+    applicationInsightsName: monitoring.outputs.applicationInsightsName
     appServicePlanId: appServicePlan.outputs.id
     keyVaultName: keyVault.outputs.name
     runtimeName: 'node'
@@ -116,12 +134,20 @@ module functions './core/host/functions.bicep' = {
   }
 }
 
+output AZURE_TENANT_ID string = tenant().tenantId
+output AZURE_LOCATION string = location
+
 output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.endpoint
 output AZURE_KEY_VAULT_NAME string = keyVault.outputs.name
-output AZURE_LOCATION string = location
-output AZURE_TENANT_ID string = tenant().tenantId
-
-output SERVICE_API_NAME string = functions.outputs.name
-
+output STORAGE_ACCOUNT_ID string = storageAccount.outputs.id
 output STORAGE_ACCOUNT_NAME string = storageAccount.outputs.name
 output STORAGE_CONTAINER_NAME array = storageAccount.outputs.containerNames
+output EVENT_GRID_NAME string = eventGrid.outputs.systemTopicName
+output APPLICATION_INSIGHTS_NAME string = monitoring.outputs.applicationInsightsName
+output LOG_ANALYTICS_NAME string = monitoring.outputs.logAnalyticsName
+output APP_SERVICE_PLAN_NAME string = appServicePlan.outputs.name
+output FUNCTION_APP_ID string = functions.outputs.id
+output FUNCTION_APP_NAME string = functions.outputs.name
+output FUNCTION_APP_HOST_NAME string = functions.outputs.uri
+output FUNCTION_APP_PRINCIPAL_ID string = functions.outputs.identityPrincipalId
+output RESOURCE_TOKEN string = resourceToken

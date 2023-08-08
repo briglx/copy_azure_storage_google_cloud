@@ -71,5 +71,29 @@ az login --tenant $AZURE_TENANT_ID
 ./scripts/devops.sh provision --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
 
 # Package the app using the environment variables in .azure/env + deploy the code on Azure
-./scripts/devops.sh deploy
+./scripts/devops.sh deploy --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
 ```
+
+## Deployment
+
+Function App
+
+```bash
+
+# Deploy the function app
+rg_name=<resource_group>
+app_name=<function_app_name>
+zip_file_path=<zip_file_path>
+
+az functionapp deployment source config-zip -g "$rg_name" -n "$app_name" --src "zip_file_path"
+```
+
+# Architecture Design Decisions
+
+## Blob Storage trigger vs Event Grid trigger
+
+If you're using earlier versions of the Blob Storage trigger with Azure Functions, you often get delayed executions because the trigger polls the blob container for updates. You can reduce latency by triggering your function using an event subscription to the same container. The event subscription forwards changes in the container as events that your function consumes by using Event Grid. You can implement this capability with Visual Studio Code with latest Azure Functions extension.
+
+# References
+
+- Event Grid Trigger https://learn.microsoft.com/en-us/azure/azure-functions/functions-event-grid-blob-trigger?pivots=programming-language-javascript

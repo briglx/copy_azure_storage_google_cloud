@@ -7,14 +7,18 @@
     "prepare": "husky install",
     "format": "prettier --write .",
     "format:diff": "prettier --list-different .",
-    "lint:bicep": "./scripts/pre_commit_bicep.sh \"**/*.bicep\"",
+    "lint:bicep": "./scripts/pre_commit_bicep.sh \"*.bicep\"",
     "lint:spell": "cspell -- --config .cspell.json \"**/*.{js,json,md,sh,bicep}\"",
     "lint:eslint": "eslint --config .eslintrc.js --cache .",
     "lint": "eslint --config .eslintrc.js && npm run lint:spell && npm run lint:bicep",
     "lint:fix": "npm run lint -- --fix",
     "clean": "rimraf \"node_modules\"",
-    "clean:install": "rimraf \"node_modules\" && npm install"
+    "clean:install": "rimraf \"node_modules\" && npm install",
+    "start": "npm run start -ws"
   },
+  "workspaces": [
+    "functions"
+  ],
   "keywords": [],
   "author": "",
   "license": "MIT",
@@ -55,6 +59,7 @@
     ]
   },
   "dependencies": {
+    "@azure/functions": "^4.0.0-alpha.11",
     "npm": "^9.8.1"
   }
 }

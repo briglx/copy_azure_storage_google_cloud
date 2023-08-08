@@ -41,3 +41,5 @@ resource eventSubscription 'Microsoft.EventGrid/systemTopics/eventSubscriptions@
     }
   }
 }
+
+output systemTopicName string = systemTopic.name

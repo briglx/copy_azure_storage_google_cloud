@@ -17,6 +17,7 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+
 lint_file() {
   local file="$1"
   local output
@@ -56,6 +57,7 @@ process_file_or_directory() {
   fi
 
   if [ "$failed" -eq 1 ]; then
+    echo "Error: failed."
     exit 1
   fi
 }
