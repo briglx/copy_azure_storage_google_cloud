@@ -78,6 +78,9 @@ az login --tenant $AZURE_TENANT_ID
 ```bash
 # Package the app using the environment variables in .azure/env + deploy the code on Azure
 ./scripts/devops.sh deploy --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
+
+# Create event subscription
+./scripts/devops.sh event-subscription --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
 ```
 
 # Architecture Design Decisions

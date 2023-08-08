@@ -181,7 +181,7 @@ deploy(){
     # Zip the folder to the specified location
     # zip -r "$zip_file_path" "$(basename "$source_folder")" -x "*/local.settings.json" -x "*/.gitignore"
     cd "$source_folder"
-    zip -r "$zip_file_path" ./* -x "*/local.settings.json" -x "*/.gitignore"
+    zip -r "$zip_file_path" ./* -x "local.settings.json" -x "*/.gitignore"
 
 
     # Get resource group
@@ -216,25 +216,33 @@ deploy(){
     echo "Done"
 }
 
-# create_event_subscription(){
-#     local deployment_name="$2"
-#     local output_variables = $(az deployment sub show -n "${deployment_name}" --query 'properties.outputs' --output json)
+create_event_subscription(){
+    local deployment_name="${app_name}.CreateEventSubscription-${run_date}"
 
-#     # Create Event Subscription
-#     echo "Create Event Subscription"
+    additional_parameters=("applicationName=$app_name")
+    if [ -n "$AZURE_ENV_NAME" ]
+    then
+        additional_parameters+=("environmentName=$AZURE_ENV_NAME")
+    fi
 
-#     echo get storage account id
-#     storage_account_id=$(echo "$output_variables" | jq -r 'map(select(.name | ascii_downcase == "storage_account_id")) | .[0].value')
+    if [ -n "$AZURE_LOCATION" ]
+    then
+        additional_parameters+=("location=$AZURE_LOCATION")
+    fi
 
-#     echo get function app id
-#     function_app_id=$(echo "$output_variables" | jq -r 'map(select(.name | ascii_downcase == "function_app_id")) | .[0].value')
+    additional_parameters+=("createEventSubscription=true")
+    
+    # Create Event Subscription
+    echo "Create Event Subscription"
 
-#     az eventgrid event-subscription create \
-#         --name "${app_name}-event-subscription" \
-#         --source-resource-id "${storage_account_id}" \
-#         --endpoint "${function_app_id}" \
-#         --endpoint-type "AzureFunction"
-# }
+    az deployment sub create \
+        --name "${deployment_name}" \
+        --location "$location" \
+        --template-file "${PROJ_ROOT_PATH}/infra/main.bicep" \
+        --parameters "${PROJ_ROOT_PATH}/infra/main.parameters.json" \
+        --parameters "${additional_parameters[@]}"
+
+}
 
 # Argument/Options
 LONGOPTS=name:,resource-group:,environment:,location:,help

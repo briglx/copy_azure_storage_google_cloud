@@ -23,9 +23,11 @@ param storageContainerName string = ''
 param eventGridEventSubscriptionName string = ''
 param applicationInsightsName string = ''
 param applicationInsightsDashboardName string = ''
+param functionEndpoint string = ''
 param logAnalyticsName string = ''
 param appServicePlanName string = ''
 param apiServiceName string = ''
+param createEventSubscription bool = false
 param functionName string = 'ProcessBlobEvents'
 
 var abbrs = loadJsonContent('./abbreviations.json')
@@ -76,7 +78,8 @@ module eventGrid './core/pubsub/event-grid.bicep' = {
     name: '${abbrs.eventGridSystemTopic}${applicationName}-${environmentName}-${storageAccount.outputs.name}'
     location: location
     tags: tags
-    endpoint: '${functions.outputs.id}/functions/${functionName}'
+    endpoint: !empty(functionEndpoint) ? functionEndpoint : '${functions.outputs.id}/functions/${functionName}'
+    createEventSubscription: createEventSubscription
     eventSubName: !empty(eventGridEventSubscriptionName) ? eventGridEventSubscriptionName : '${abbrs.eventGridEventSubscriptions}${resourceToken}-${functionName}'
     storageAccountId: storageAccount.outputs.id
   }

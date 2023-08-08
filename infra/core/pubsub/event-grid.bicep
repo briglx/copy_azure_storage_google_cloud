@@ -3,6 +3,7 @@ param name string
 param location string = resourceGroup().location
 param storageAccountId string
 param endpoint string
+param createEventSubscription bool = false
 param tags object = {}
 param eventSubName string
 
@@ -19,7 +20,7 @@ resource systemTopic 'Microsoft.EventGrid/systemTopics@2021-10-15-preview' = {
   }
 }
 
-resource eventSubscription 'Microsoft.EventGrid/systemTopics/eventSubscriptions@2022-06-15' = if (endpoint != '') {
+resource eventSubscription 'Microsoft.EventGrid/systemTopics/eventSubscriptions@2022-06-15' = if (createEventSubscription == true) {
   parent: systemTopic
   name: eventSubName
   properties: {
