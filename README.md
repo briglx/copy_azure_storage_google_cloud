@@ -80,7 +80,7 @@ az login --tenant $AZURE_TENANT_ID
 ./scripts/devops.sh deploy --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
 
 # Create event subscription
-./scripts/devops.sh event-subscription --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
+./scripts/devops.sh event --name "$APP_NAME" --environment "$AZURE_ENV_NAME"
 ```
 
 # Architecture Design Decisions

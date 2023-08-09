@@ -8,6 +8,7 @@ param appServicePlanId string
 param keyVaultName string = ''
 param managedIdentity bool = !empty(keyVaultName)
 param storageAccountName string
+param sampleStorageAccountName string
 
 // Runtime Properties
 @allowed([
@@ -55,6 +56,7 @@ module functions 'appservice.bicep' = {
         AzureWebJobsStorage: 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
         FUNCTIONS_EXTENSION_VERSION: extensionVersion
         FUNCTIONS_WORKER_RUNTIME: runtimeName
+        BLOB_STORAGE_CONNECTION_STRING: 'DefaultEndpointsProtocol=https;AccountName=${sampleStorage.name};AccountKey=${sampleStorage.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
       })
     clientAffinityEnabled: clientAffinityEnabled
     enableOryxBuild: enableOryxBuild
@@ -84,6 +86,10 @@ module apiKeyVaultAccess '../security/keyvault-access.bicep' = {
 
 resource storage 'Microsoft.Storage/storageAccounts@2021-09-01' existing = {
   name: storageAccountName
+}
+
+resource sampleStorage 'Microsoft.Storage/storageAccounts@2021-09-01' existing = {
+  name: sampleStorageAccountName
 }
 
 output id string = functions.outputs.id

@@ -1,31 +1,37 @@
 param logAnalyticsName string
 param applicationInsightsName string
-param applicationInsightsDashboardName string
 param location string = resourceGroup().location
 param tags object = {}
 
-module logAnalytics 'loganalytics.bicep' = {
-  name: 'loganalytics'
-  params: {
-    name: logAnalyticsName
-    location: location
-    tags: tags
+
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' = {
+  name: logAnalyticsName
+  location: location
+  tags: tags
+  properties: any({
+    retentionInDays: 30
+    features: {
+      searchVersion: 1
+    }
+    sku: {
+      name: 'PerGB2018'
+    }
+  })
+}
+
+resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: applicationInsightsName
+  location: location
+  tags: tags
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalytics.id
   }
 }
 
-module applicationInsights 'applicationinsights.bicep' = {
-  name: 'applicationinsights'
-  params: {
-    name: applicationInsightsName
-    location: location
-    tags: tags
-    dashboardName: applicationInsightsDashboardName
-    logAnalyticsWorkspaceId: logAnalytics.outputs.id
-  }
-}
-
-output applicationInsightsConnectionString string = applicationInsights.outputs.connectionString
-output applicationInsightsInstrumentationKey string = applicationInsights.outputs.instrumentationKey
-output applicationInsightsName string = applicationInsights.outputs.name
-output logAnalyticsWorkspaceId string = logAnalytics.outputs.id
-output logAnalyticsName string = logAnalytics.outputs.name
+output applicationInsightsConnectionString string = applicationInsights.properties.ConnectionString
+output applicationInsightsInstrumentationKey string = applicationInsights.properties.InstrumentationKey
+output applicationInsightsName string = applicationInsights.name
+output logAnalyticsWorkspaceId string = logAnalytics.id
+output logAnalyticsName string = logAnalytics.name

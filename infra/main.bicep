@@ -19,10 +19,8 @@ param applicationName string
 
 param keyVaultName string = ''
 param storageAccountName string = ''
-param storageContainerName string = ''
 param eventGridEventSubscriptionName string = ''
 param applicationInsightsName string = ''
-param applicationInsightsDashboardName string = ''
 param functionEndpoint string = ''
 param logAnalyticsName string = ''
 param appServicePlanName string = ''
@@ -66,7 +64,7 @@ module storageAccount './core/storage/storage-account.bicep' = {
     location: location
     containers: [
       {
-        name: !empty(storageContainerName) ? storageContainerName : '${abbrs.storageStorageContainer}${resourceToken}'
+        name: '${abbrs.storageStorageContainer}_sample'
         publicAccess: 'Blob'
       }
     ]
@@ -108,12 +106,21 @@ module monitoring './core/monitor/monitoring.bicep' = {
     tags: tags
     logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
-    applicationInsightsDashboardName: !empty(applicationInsightsDashboardName) ? applicationInsightsDashboardName : '${abbrs.portalDashboards}${resourceToken}'
   }
 }
 
 
 /////////// Function App ///////////
+
+module fxnstore './core/storage/storage-account.bicep' = {
+  name: 'fxnstore'
+  scope: rg
+  params: {
+    name: '${abbrs.storageStorageAccounts}${resourceToken}fx'
+    allowBlobPublicAccess: true
+    location: location
+  }
+}
 
 module appServicePlan './core/host/appserviceplan.bicep' = {
   name: 'appserviceplan'
@@ -139,15 +146,14 @@ module functions './core/host/functions.bicep' = {
     alwaysOn: false
     appSettings: {
       AzureWebJobsFeatureFlags: 'EnableWorkerIndexing'
-      // EVENT_GRID_ENDPOINT: eventGrid.properties.endpoint
-      // EVENT_GRID_TOPIC_KEY: eventGrid.listKeys().key1
     }
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     appServicePlanId: appServicePlan.outputs.id
     keyVaultName: keyVault.outputs.name
     runtimeName: 'python'
     runtimeVersion: '3.10'
-    storageAccountName: storageAccount.outputs.name
+    storageAccountName: fxnstore.outputs.name
+    sampleStorageAccountName: storageAccount.outputs.name
   }
 }
 

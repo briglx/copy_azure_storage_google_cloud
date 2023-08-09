@@ -19,6 +19,7 @@
   ],
   "words": [
     "abbrs",
+    "aiohttp",
     "appservice",
     "appserviceplan",
     "appsettings",
@@ -36,6 +37,7 @@
     "eventgrid",
     "eventhubs",
     "functionapp",
+    "fxnstore",
     "getopt",
     "keyvault",
     "kusto",
@@ -45,6 +47,7 @@
     "longopts",
     "menuid",
     "myblob",
+    "noninteractive",
     "readblobqueue",
     "queuestorage",
     "readall",

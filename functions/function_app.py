@@ -3,82 +3,67 @@ import json
 import logging
 import os
 import asyncio
-from azure.storage.blob import BlobServiceClient
 from azure.storage.blob.aio import BlobClient
+import sys
+from urllib.parse import urlparse
 
 app = func.FunctionApp()
 
-async def read_file(file_path: str) -> str:
 
-    temp_file_path = f"./temp/{file_path}"
+def parse_azure_storage_url(url):
+    """Parse an Azure Blob Storage URL into its components.
+    Returns a tuple of (storage_account_name, container_name, blob_name).
+    Example: https://account_name.blob.core.windows.net/container/folder/myfile.txt
+    returns ('account_name', 'container', 'folder/myfile.txt')
+    """
+    parsed_url = urlparse(url)
+
+    if parsed_url.scheme != "https":
+        raise ValueError("URL scheme must be 'https'")
+
+    if parsed_url.netloc.endswith(".blob.core.windows.net"):
+        storage_account_name = parsed_url.netloc.split(".")[0]
+    else:
+        raise ValueError("Invalid Azure Blob Storage URL")
+
+    path_parts = parsed_url.path.strip("/").split("/")
+
+    if len(path_parts) < 2:
+        raise ValueError("Invalid path in URL")
+
+    container_name = path_parts[0]
+    blob_name = "/".join(path_parts[1:])
+
+    return storage_account_name, container_name, blob_name
+
+
+async def read_file(container_name: str, blob_name: str) -> str:
+    """Read a file from Azure Blob Storage asynchronously.
+    Returns the file contents as a string.
+    """
+    logging.info("blob_name: %s", blob_name)
 
     try:
-        conn_str=os.environ["BLOB_STORAGE_CONNECTION_STRING"]
-
+        conn_str = os.environ["BLOB_STORAGE_CONNECTION_STRING"]
     except KeyError:
-        print("BLOB_STORAGE_CONNECTION_STRING must be set.")
+        logging.error("BLOB_STORAGE_CONNECTION_STRING must be set.")
         sys.exit(1)
-
-    try:
-        container_name=os.environ["BLOB_STORAGE_CONTAINER_NAME"]
-    except KeyError:
-        print("BLOB_STORAGE_CONTAINER_NAME must be set.")
-        sys.exit(1)
-
-    # Example of reading a file from blob storage
-    status = None
-    blob_service_client = BlobServiceClient.from_connection_string(conn_str)
-    async with blob_service_client:
-        temp_file = blob_service_client.get_blob_client(container=container_name, blob=temp_file_path)
-        await temp_file.start_copy_from_url(file_path)
-        for i in range(10):
-            props = await temp_file.get_blob_properties()
-            status = props.copy.status
-            print("Copy status: " + status)
-            if status == "success":
-                # copy finished
-                break
-            time.sleep(10)
-
-        if status != "success":
-            # if not finished after 100s, cancel the operation
-            props = await temp_file.get_blob_properties()
-            print(props.copy.status)
-            copy_id = props.copy.id
-            await temp_file.abort_copy(copy_id)
-            props = temp_file.get_blob_properties()
-            print(props.copy.status)
-
 
     # Example of downloading a blob asynchronously
-    blob = BlobClient.from_connection_string(conn_str=conn_str, container_name=container_name, blob_name=file_path)
-    with open(temp_file_path, "wb") as my_blob:
-        stream = await blob.download_blob()
-        data = await stream.readall()
-        my_blob.write(data)
-
-
-    # container_client = blob_service_client.get_container_client(container_name)
-    # blob_client = container_client.get_blob_client(blob_url)
-
-    # blob_name = blob_url.split('/')[-1]
-
-    # blob_client = BlobClient.from_connection_string(conn_str=conn_str, container_name=container_name, blob_name=blob_name)
-
-    # temp_file_path = f"./temp/{blob_name}"  
-    # with open(temp_file_path, "wb") as temp_file:
-    #     stream = await blob.download_blob()
-    #     data = await stream.readall()
-    #     temp_file.write(data)
+    logging.info("Create blob_client for %s", blob_name)
+    async with BlobClient.from_connection_string(
+        conn_str=conn_str, container_name=container_name, blob_name=blob_name
+    ) as blob:
     
-    # streamdownloader = blob_client.download_blob()
+        logging.info("Download blob %s", blob_name)
+        stream = await blob.download_blob()
+        
+        logging.info("Read blob %s", blob_name)
+        data = await stream.readall()
+        
+        logging.info("Blob contents are: %s", data)
 
-    # # Stream read file to destination
-    # file_name = "temp_file.txt"
-    # with open(file_name, "wb") as my_blob:
-    #     streamdownloader.readinto(my_blob)
-
-
+    logging.info("Done reading file %s", blob_name)
 
 @app.function_name(name="HttpTrigger1")
 @app.route(route="hello")
@@ -86,19 +71,30 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
     return func.HttpResponse("HttpTrigger1 function processed a request!")
 
 
-@app.function_name(name="eventGridTrigger")
+@app.function_name(name="ProcessBlobEvents")
 @app.event_grid_trigger(arg_name="event")
-def eventGridTest(event: func.EventGridEvent):
+def ProcessBlobEvents(event: func.EventGridEvent):
+    json_str = json.dumps(
+        {
+            "id": event.id,
+            "data": event.get_json(),
+            "topic": event.topic,
+            "subject": event.subject,
+            "event_type": event.event_type,
+        }
+    )
 
-    result = json.dumps({
-        'id': event.id,
-        'data': event.get_json(),
-        'topic': event.topic,
-        'subject': event.subject,
-        'event_type': event.event_type,
-    })
+    logging.info("Python EventGrid trigger processed an event: %s", json_str)
 
-    blob_url = result['data']['url']
+    data = event.get_json()
+    logging.info("data: %s", data)
 
-    logging.info('Python EventGrid trigger processed an event: %s', result)
-    logging.info('blob_url: %s', blob_url)
+    file_url = data["url"]
+    logging.info("file_url: %s", file_url)
+
+    storage_account, container_name, blob_name = parse_azure_storage_url(file_url)
+    logging.info("storage_account: %s", storage_account)
+    logging.info("container_name: %s", container_name)
+    logging.info("blob_name: %s", blob_name)
+
+    asyncio.run(read_file(container_name, blob_name))
