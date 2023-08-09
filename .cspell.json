@@ -14,7 +14,8 @@
     ".gitignore",
     "devcontainer.json",
     ".cspell.json",
-    "infra/abbreviations.json"
+    "infra/abbreviations.json",
+    "local.settings.json"
   ],
   "words": [
     "abbrs",
@@ -22,11 +23,13 @@
     "appserviceplan",
     "appsettings",
     "arrowparens",
+    "asyncio",
     "azurefunctions",
     "azuretools",
     "blobfunction",
     "blobstorage",
     "codespaces",
+    "containerregistry",
     "devcontainers",
     "dotnetcore",
     "eastus",
@@ -44,7 +47,9 @@
     "myblob",
     "readblobqueue",
     "queuestorage",
+    "readall",
     "serverfarms",
+    "streamdownloader",
     "stytcj6whfrp4uq",
     "westus",
     "workitems",

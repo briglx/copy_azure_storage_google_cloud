@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@azure/functions": "^4.0.0-alpha.11",
+    "@google-cloud/storage": "^7.0.1",
     "npm": "^9.8.1"
   }
 }

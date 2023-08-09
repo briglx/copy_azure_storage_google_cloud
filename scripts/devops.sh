@@ -205,10 +205,12 @@ deploy(){
     functionapp_name=$(jq -r '.[0]' <<< "$matching_resources")
     echo "Deploying to $functionapp_name"
 
-    az functionapp deployment source config-zip \
-        --name "${functionapp_name}" \
-        --resource-group "${resource_group}" \
-        --src "${zip_file_path}"
+    func azure functionapp publish "$functionapp_name"
+
+    # az functionapp deployment source config-zip \
+    #     --name "${functionapp_name}" \
+    #     --resource-group "${resource_group}" \
+    #     --src "${zip_file_path}"
 
     echo "Cleaning up"
     # rm "${zip_file_path}"

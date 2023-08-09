@@ -27,6 +27,8 @@ param functionEndpoint string = ''
 param logAnalyticsName string = ''
 param appServicePlanName string = ''
 param apiServiceName string = ''
+param acrName string = ''
+param acrSku string = ''
 param createEventSubscription bool = false
 param functionName string = 'ProcessBlobEvents'
 
@@ -68,6 +70,18 @@ module storageAccount './core/storage/storage-account.bicep' = {
         publicAccess: 'Blob'
       }
     ]
+  }
+}
+
+// Azure Container Registry
+module containerRegistry './core/host/containerregistry.bicep' = {
+  name: 'containerRegistry'
+  scope: rg
+  params: {
+    name: !empty(acrName) ? acrName : '${abbrs.containerRegistryRegistries}${resourceToken}'
+    location: location
+    tags: tags
+    acrSku: !empty(acrSku) ? acrSku : 'Basic'
   }
 }
 
@@ -131,8 +145,8 @@ module functions './core/host/functions.bicep' = {
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     appServicePlanId: appServicePlan.outputs.id
     keyVaultName: keyVault.outputs.name
-    runtimeName: 'node'
-    runtimeVersion: '18'
+    runtimeName: 'python'
+    runtimeVersion: '3.10'
     storageAccountName: storageAccount.outputs.name
   }
 }
