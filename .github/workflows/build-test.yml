@@ -28,3 +28,26 @@ jobs:
 
       - name: Lint files
         run: npm run lint
+  provision:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1"
+        with:
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GOOGLE_CICD_SERVICE_ACCOUNT }}
+
+      # Install gcloud, `setup-gcloud` automatically picks up authentication from `auth`.
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+
+      # Now you can run gcloud commands authenticated as the impersonated service account.
+      - id: "gcloud"
+        name: "gcloud"
+        run: |-
+          gcloud storage buckets list --limit 10

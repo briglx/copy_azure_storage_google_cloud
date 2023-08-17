@@ -3,7 +3,7 @@
 # Onboard and manage application on cloud infrastructure.
 # Usage: devops.sh [COMMAND{provision | deploy}] 
 # Globals:
-#   AZURE_ENV_NAME
+#   ENV_NAME
 #   AZURE_LOCATION
 #   AZURE_SUBSCRIPTION_ID
 #
@@ -23,7 +23,7 @@ show_help() {
     echo "$0 : Onboard and manage application on cloud infrastructure." >&2
     echo "Usage: devops.sh [COMMAND{provision | deploy}]"
     echo "Globals"
-    echo "   AZURE_ENV_NAME"
+    echo "   ENV_NAME"
     echo "   AZURE_LOCATION"
     echo "   AZURE_SUBSCRIPTION_ID"
     echo
@@ -47,10 +47,10 @@ validate_parameters(){
         exit 1
     fi
 
-    # Check AZURE_ENV_NAME
-    if [ -z "$AZURE_ENV_NAME" ]
+    # Check ENV_NAME
+    if [ -z "$ENV_NAME" ]
     then
-        echo "AZURE_ENV_NAME is required" >&2
+        echo "ENV_NAME is required" >&2
         show_help
         exit 1
     fi
@@ -93,9 +93,9 @@ provision(){
     local deployment_name="${app_name}.Provisioning-${run_date}"
 
     additional_parameters=("applicationName=$app_name")
-    if [ -n "$AZURE_ENV_NAME" ]
+    if [ -n "$ENV_NAME" ]
     then
-        additional_parameters+=("environmentName=$AZURE_ENV_NAME")
+        additional_parameters+=("environmentName=$ENV_NAME")
     fi
 
     if [ -n "$AZURE_LOCATION" ]
@@ -117,12 +117,14 @@ provision(){
     echo "Save deployment $deployment_name output variables to ${env_file}"
     {
         echo "# Deployment output variables"
-        echo "# Generated on $(date)"
+        echo "# Generated on ${iso_date_utc}"
         echo ""
         echo "$output_variables" | jq -r 'to_entries[] | "\(.key | ascii_upcase )=\(.value.value)"' 
     }>> "$env_file"
 
 
+    # Create Google Cloud Resources
+    
 
 }
 
@@ -131,7 +133,7 @@ delete(){
 
     # Get resource group
     echo "Looking up resource group"
-    rg_lookup="rg-${app_name}_${AZURE_ENV_NAME}_${AZURE_LOCATION}"
+    rg_lookup="rg-${app_name}_${ENV_NAME}_${AZURE_LOCATION}"
     query_param="[?name=='$rg_lookup'].name"
     resource_group=$(az group list --query "$query_param" -o tsv)
 
@@ -155,7 +157,7 @@ deploy(){
     local zip_file_name="${app_name}_${environment}_${timestamp}.zip"
     local zip_file_path="${destination_dir}/${zip_file_name}"
     local functionapp_pattern="func-${app_name}-${environment}-"
-    local rg_lookup="rg-${app_name}_${AZURE_ENV_NAME}_${AZURE_LOCATION}"
+    local rg_lookup="rg-${app_name}_${ENV_NAME}_${AZURE_LOCATION}"
     local query_param="[?name=='$rg_lookup'].name"
     local resource_group
 
@@ -222,9 +224,9 @@ create_event_subscription(){
     local deployment_name="${app_name}.CreateEventSubscription-${run_date}"
 
     additional_parameters=("applicationName=$app_name")
-    if [ -n "$AZURE_ENV_NAME" ]
+    if [ -n "$ENV_NAME" ]
     then
-        additional_parameters+=("environmentName=$AZURE_ENV_NAME")
+        additional_parameters+=("environmentName=$ENV_NAME")
     fi
 
     if [ -n "$AZURE_LOCATION" ]
@@ -254,7 +256,8 @@ OPTIONS=n:g:e:l:h
 app_name=""
 location=""
 environment="dev"
-run_date=$(date +%Y%m%dT%H%M%S) 
+run_date=$(date +%Y%m%dT%H%M%S)
+iso_date_utc=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 # Globals
 PROJ_ROOT_PATH=$(cd "$(dirname "$0")"/..; pwd)
