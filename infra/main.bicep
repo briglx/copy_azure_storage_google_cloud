@@ -64,7 +64,7 @@ module storageAccount './core/storage/storage-account.bicep' = {
     location: location
     containers: [
       {
-        name: '${abbrs.storageStorageContainer}_sample'
+        name: '${abbrs.storageStorageContainer}-sample'
         publicAccess: 'Blob'
       }
     ]
@@ -109,7 +109,6 @@ module monitoring './core/monitor/monitoring.bicep' = {
   }
 }
 
-
 /////////// Function App ///////////
 
 module fxnstore './core/storage/storage-account.bicep' = {
@@ -146,6 +145,8 @@ module functions './core/host/functions.bicep' = {
     alwaysOn: false
     appSettings: {
       AzureWebJobsFeatureFlags: 'EnableWorkerIndexing'
+      FUNCTIONS_WORKER_RUNTIME: 'python'
+      AZURE_TENANT_ID: tenant().tenantId
     }
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     appServicePlanId: appServicePlan.outputs.id
@@ -153,7 +154,6 @@ module functions './core/host/functions.bicep' = {
     runtimeName: 'python'
     runtimeVersion: '3.10'
     storageAccountName: fxnstore.outputs.name
-    sampleStorageAccountName: storageAccount.outputs.name
   }
 }
 

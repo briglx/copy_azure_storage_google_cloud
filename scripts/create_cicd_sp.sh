@@ -187,7 +187,7 @@ create_google_sp(){
     gcloud projects add-iam-policy-binding "${target_project_id}" --member=serviceAccount:"${service_account_email}" --role=roles/serviceusage.serviceUsageAdmin
     gcloud projects add-iam-policy-binding "${target_project_id}" --member=serviceAccount:"${service_account_email}" --role=roles/iam.serviceAccountCreator
 
-
+    
     # Check if the Workload Identity Pool already exists
     pool_id=$(gcloud iam workload-identity-pools describe "${pool_name}" --project "${project_id}" --location "global" --format "value(name)")
     if [[ -n "$pool_id" ]]
@@ -201,6 +201,10 @@ create_google_sp(){
         pool_id=$(gcloud iam workload-identity-pools describe "${pool_name}" --project "${project_id}" --location "global" --format "value(name)")
     fi
 
+    # Grant users access to this service account
+    gcloud projects add-iam-policy-binding "${target_project_id}" --member=serviceAccount:"principalSet://iam.googleapis.com/projects/${project_id}/locations/global/workloadIdentityPools/${pool_name}/*" --role=roles/iam.serviceAccountUser
+
+
     
     # Check if the Workload Identity Pool Provider already exists
     provider_id=$(gcloud iam workload-identity-pools providers describe "${pool_provider_name}" --project "${project_id}" --location "global" --workload-identity-pool "${pool_name}" --format "value(name)")
@@ -211,8 +215,7 @@ create_google_sp(){
         echo "Create Workload Identity Pool Provider ${pool_provider_name}"
         gcloud iam workload-identity-pools providers create-oidc \
             "${pool_provider_name}" \
-            --project="${project_id}" \
-            --location="global" \
+            --project="${project_id}" --location="global" \
             --workload-identity-pool="${pool_name}" \
             --display-name="${provider_display_name}" \
             --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
@@ -251,11 +254,11 @@ OPTIONS=c:h
 
 # Variables
 cloud_name=""
-iso_date_utc=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 ## Globals
 PROJ_ROOT_PATH=$(cd "$(dirname "$0")"/..; pwd)
 ENV_FILE="${PROJ_ROOT_PATH}/.env"
+iso_date_utc=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 # Parse arguments
 TEMP=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")

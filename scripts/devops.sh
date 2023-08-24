@@ -6,6 +6,7 @@
 #   ENV_NAME
 #   AZURE_LOCATION
 #   AZURE_SUBSCRIPTION_ID
+#   FUNCTION_APP_NAME (created when provisioned)
 #
 # Commands
 #   provision   Provision resources for the application.
@@ -116,9 +117,9 @@ provision(){
     output_variables=$(az deployment sub show -n "${deployment_name}" --query 'properties.outputs' --output json)
     echo "Save deployment $deployment_name output variables to ${env_file}"
     {
-        echo "# Deployment output variables"
-        echo "# Generated on ${iso_date_utc}"
         echo ""
+        echo "# Deployment output variables"
+        echo "# Generated on ${ISO_DATE_UTC}"
         echo "$output_variables" | jq -r 'to_entries[] | "\(.key | ascii_upcase )=\(.value.value)"' 
     }>> "$env_file"
 
@@ -156,10 +157,6 @@ deploy(){
     timestamp=$(date +'%Y%m%d%H%M%S')
     local zip_file_name="${app_name}_${environment}_${timestamp}.zip"
     local zip_file_path="${destination_dir}/${zip_file_name}"
-    local functionapp_pattern="func-${app_name}-${environment}-"
-    local rg_lookup="rg-${app_name}_${ENV_NAME}_${AZURE_LOCATION}"
-    local query_param="[?name=='$rg_lookup'].name"
-    local resource_group
 
     echo "$0 : deploy $app_name to $environment" >&2
 
@@ -169,55 +166,66 @@ deploy(){
         return 1
     fi
 
-    # Delete the previous zip file if it exists
-    local prev_zip_files=("$destination_dir"/*.zip)
-    if [ ${#prev_zip_files[@]} -gt 0 ]; then
-        rm -f "${prev_zip_files[@]}" 2>/dev/null
-    fi
-
     # Create the destination directory if it doesn't exist
     mkdir -p "$(dirname "$zip_file_path")"
 
-    cd "$(dirname "$source_folder")"
+    # Create an array for exclusion patterns
+    exclude_patterns=()
+    while IFS= read -r pattern; do
+        # Skip lines starting with '#' (comments)
+        if [[ "$pattern" =~ ^[^#] ]]; then
+            exclude_patterns+=("-x./$pattern")
+        fi
+    done < "${PROJ_ROOT_PATH}/.gitignore"
+    exclude_patterns+=("-x./local.settings.*")
+    exclude_patterns+=("-x./requirements_dev.txt")
 
     # Zip the folder to the specified location
-    # zip -r "$zip_file_path" "$(basename "$source_folder")" -x "*/local.settings.json" -x "*/.gitignore"
     cd "$source_folder"
-    zip -r "$zip_file_path" ./* -x "local.settings.json" -x "*/.gitignore"
+    zip -r "$zip_file_path" ./* "${exclude_patterns[@]}"
 
-
-    # Get resource group
-    echo "Looking up resource group"
-    resource_group=$(az group list --query "$query_param" -o tsv)
-    if [ -z "$resource_group" ]
-    then
-        echo "Resource group ${resource_group} not found" >&2
-        exit 1
-    fi
-
-    # Get function app name
-    echo "Looking up function app"
-    matching_resources=$(az resource list --query "[?name | starts_with(@, '$functionapp_pattern')].name" --output json)
-
-    if [ "$(jq length <<< "$matching_resources")" -eq 0 ]; then
-        echo "No matching function apps found."
-        exit 1
-    fi
-    # Get the first matching resource
-    functionapp_name=$(jq -r '.[0]' <<< "$matching_resources")
-    echo "Deploying to $functionapp_name"
-
-    func azure functionapp publish "$functionapp_name"
+    func azure functionapp publish "$FUNCTION_APP_NAME"
 
     # az functionapp deployment source config-zip \
     #     --name "${functionapp_name}" \
     #     --resource-group "${resource_group}" \
     #     --src "${zip_file_path}"
 
+    # Update environment variables to function app
+    update_environment_variables
+    
     echo "Cleaning up"
-    # rm "${zip_file_path}"
+    rm "${zip_file_path}"
 
     echo "Done"
+}
+
+update_environment_variables(){
+    local env_file="${PROJ_ROOT_PATH}/.env"
+    local input_file="${PROJ_ROOT_PATH}/functions/local.settings.json"
+    local output_file="${PROJ_ROOT_PATH}/.fnx.app.settings.json"
+    keys_to_match=("AZURE_TENANT_ID" "AZURE_APP_SERVICE_CLIENT_ID" "AZURE_APP_SERVICE_CLIENT_SECRET")
+
+    # Update Azure Function App Environment Variables from .env file
+    echo "Update Azure Function App Environment Variables from .env file"
+
+    # json_data=$(cat "$input_file")
+    json_data=$( jq -r '.Values' "$input_file")
+    keys_json_array=$(printf '%s\n' "${keys_to_match[@]}" | jq -R -s 'split("\n") | map(select(. != ""))')
+
+    filtered_data=$(echo "$json_data" | jq --argjson keys "$keys_json_array" '
+        . as $data | to_entries | map(select(.key as $k | $keys | index($k))) | from_entries
+    ')
+
+    # Write the JSON array to the output file
+    echo "$filtered_data" | jq '.' > "$output_file"
+
+    az webapp config appsettings set \
+        --id "$FUNCTION_APP_ID" \
+        --settings "@$output_file"
+
+    rm "$output_file"
+
 }
 
 create_event_subscription(){
@@ -257,7 +265,7 @@ app_name=""
 location=""
 environment="dev"
 run_date=$(date +%Y%m%dT%H%M%S)
-iso_date_utc=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+ISO_DATE_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 # Globals
 PROJ_ROOT_PATH=$(cd "$(dirname "$0")"/..; pwd)
@@ -314,6 +322,10 @@ case "$command" in
         ;;
     event)
         create_event_subscription
+        exit 0
+        ;;
+    update_env)
+        update_environment_variables
         exit 0
         ;;
     *)

@@ -60,13 +60,13 @@ This project uses scripts to provision infrastructure, package, and deploy the a
 
 ## Create System Identities
 
-The solution uses two system identities.
+The solution uses several system identities.
 
-| System Identities                    | Authentication                                             | Authorization                                                                                                                                                                  | Purpose                                                                             |
-| ------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `env.AZURE_CICD_CLIENT_NAME`         | OpenId Connect (OIDC) based Federated Identity Credentials | Subscription Contributor access<br>Microsoft Graph API admin consent Permissions: <ul><li>Directory.ReadWrite.All</li><li>User.Invite.All</li><li>User.ReadWrite.All</li></ul> | Deploy cloud resources: <ul><li>core infrastructure</li><li>function app</li></ul>  |
-| `env.GOOGLE_CICD_SERVICE_ACCOUNT`    | OpenId Connect (OIDC) based Federated Identity Credentials | <ul><li>roles/storage.admin</li><li>roles/serviceusage.serviceUsageAdmin</li><li>roles/iam.serviceAccountCreator</li></ul>                                                     | Deploy cloud resources: <ul><li>core infrastructure</li><li>cloud storage</li></ul> |
-| `env.GOOGLE_FUNCAPP_SERVICE_ACCOUNT` | Workload identity federation or JSON key file              | TBD                                                                                                                                                                            | TBD                                                                                 |
+| System Identities                   | Authentication                                             | Authorization                                                                                                                                                                  | Purpose                                                                             |
+| ----------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `env.AZURE_CICD_CLIENT_NAME`        | OpenId Connect (OIDC) based Federated Identity Credentials | Subscription Contributor access<br>Microsoft Graph API admin consent Permissions: <ul><li>Directory.ReadWrite.All</li><li>User.Invite.All</li><li>User.ReadWrite.All</li></ul> | Deploy cloud resources: <ul><li>core infrastructure</li><li>function app</li></ul>  |
+| `env.GOOGLE_CICD_SERVICE_ACCOUNT`   | OpenId Connect (OIDC) based Federated Identity Credentials | <ul><li>roles/storage.admin</li><li>roles/serviceusage.serviceUsageAdmin</li><li>roles/iam.serviceAccountCreator</li></ul>                                                     | Deploy cloud resources: <ul><li>core infrastructure</li><li>cloud storage</li></ul> |
+| `env.AZURE_FUNCAPP_SERVICE_ACCOUNT` | Workload identity federation or JSON key file              | <ul><li>Storage Blob Data Reader on Storage Account</li></ul>                                                                                                                  | Read Blob Contents to copy                                                          |
 
 ```bash
 # load .env vars (optional)
@@ -80,11 +80,13 @@ gcloud auth login --quiet
 
 # Create Azure CICD system identity
 ./scripts/create_cicd_sp.sh --cloud azure
+./scripts/create_app_sp.sh --cloud azure --name "$APP_NAME" --env "$ENV_NAME"
 
 # Set IAM project as default
 gcloud config set project "$GOOGLE_IAM_PROJECT_ID"
 # Create Google CICD system identity
 ./scripts/create_cicd_sp.sh --cloud google
+
 ```
 
 ## Provisioning
@@ -108,13 +110,18 @@ az login --tenant $AZURE_TENANT_ID
 # Login to gcloud. Only required once per install.
 gcloud auth activate-service-account "${GOOGLE_CICD_SERVICE_ACCOUNT}" --key-file="${GOOGLE_CICD_CLIENT_KEY_FILE}"
 gcloud auth list
-./scripts/provision_google.sh --project "$GOOGLE_PROJECT_ID" --environment "$ENV"
+./scripts/gcp_provision.sh --project "$GOOGLE_PROJECT_ID" --environment "$ENV"
 
 ```
 
 ## Deployment
 
 ```bash
+# load .env vars
+[ ! -f .env ] || export $(grep -v '^#' .env | xargs)
+# or this version allows variable substitution and quoted long values
+[ -f .env ] && while IFS= read -r line; do [[ $line =~ ^[^#]*= ]] && eval "export $line"; done < .env
+
 # Package the app using the environment variables in .azure/env + deploy the code on Azure
 ./scripts/devops.sh deploy --name "$APP_NAME" --environment "$ENV_NAME"
 
@@ -141,3 +148,4 @@ Google's auth github actions recommends:
 - Google Workload Identity Federation with GitHub Actions https://cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines
 - GitHub OIDC token attributes https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token
 - Google How to Authenticate Service Accounts https://cloud.google.com/blog/products/identity-security/how-to-authenticate-service-accounts-to-help-keep-applications-secure
+- Python Confidential Client Example https://github.com/AzureAD/microsoft-authentication-library-for-python/blob/dev/sample/confidential_client_secret_sample.py

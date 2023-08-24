@@ -166,3 +166,5 @@ infra/main.json
 .cspell
 gha-creds-*.json
 creds-*.json
+local.settings.json
+local.settings.json.backup.*.json

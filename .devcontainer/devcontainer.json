@@ -26,7 +26,8 @@
         "esbenp.prettier-vscode",
         "ms-azuretools.vscode-bicep",
         "EditorConfig.EditorConfig",
-        "GitHub.copilot"
+        "GitHub.copilot",
+        "hediet.vscode-drawio"
       ]
     }
   },
