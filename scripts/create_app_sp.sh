@@ -101,6 +101,7 @@ create_app_sp(){
                 echo ""
                 echo "# Script create_app_sp.sh output"
                 echo "# Generated on ${ISO_DATE_UTC}"
+                echo "AZURE_APP_SERVICE_ID=$app_id"
                 echo "AZURE_APP_SERVICE_CLIENT_ID=$app_client_id"
                 echo "AZURE_APP_SERVICE_CLIENT_SECRET=$app_client_secret"
             }>> "$ENV_FILE"

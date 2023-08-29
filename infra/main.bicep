@@ -174,3 +174,4 @@ output FUNCTION_APP_NAME string = functions.outputs.name
 output FUNCTION_APP_HOST_NAME string = functions.outputs.uri
 output FUNCTION_APP_PRINCIPAL_ID string = functions.outputs.identityPrincipalId
 output RESOURCE_TOKEN string = resourceToken
+output AZURE_RESOURCE_GROUP_NAME string = rg.name

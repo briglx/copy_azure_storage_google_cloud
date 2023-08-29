@@ -51,7 +51,7 @@ async def get_access_token() -> str:
     authority = f"https://login.microsoftonline.com/{tenant_id}"
     scope = ["https://storage.azure.com/.default"]
 
-    logging.info("Acquire Confidential Client Application access token...")
+    logging.info("Acquire Confidential Client Application access token for client_id %s...", client_id)
     client_app = msal.ConfidentialClientApplication(
         client_id, authority=authority, client_credential=client_credential
     )

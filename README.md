@@ -46,6 +46,21 @@ flowchart LR
 2. Create a new GitHub Codespaces from your fork. This will automatically provision a new Codespaces with all the required dependencies preinstalled and configured.
 3. Open a new terminal and run `npm install && npm run prepare`
 
+Run Local Functions assumes you have already provisioned and setup the system identities
+
+```bash
+# load .env vars (optional)
+[ ! -f .env ] || eval "export $(grep -v '^#' .env | xargs)"
+# or this version allows variable substitution and quoted long values
+[ -f .env ] && while IFS= read -r line; do [[ $line =~ ^[^#]*= ]] && eval "export $line"; done < .env
+
+# Copy .env values to local.settings.json
+./scripts/copy_env.sh
+
+cd ./functions
+func host start
+```
+
 # Deploy Resources
 
 This project uses scripts to provision infrastructure, package, and deploy the application to Azure and Google Cloud.
@@ -62,11 +77,11 @@ This project uses scripts to provision infrastructure, package, and deploy the a
 
 The solution uses several system identities.
 
-| System Identities                   | Authentication                                             | Authorization                                                                                                                                                                  | Purpose                                                                             |
-| ----------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `env.AZURE_CICD_CLIENT_NAME`        | OpenId Connect (OIDC) based Federated Identity Credentials | Subscription Contributor access<br>Microsoft Graph API admin consent Permissions: <ul><li>Directory.ReadWrite.All</li><li>User.Invite.All</li><li>User.ReadWrite.All</li></ul> | Deploy cloud resources: <ul><li>core infrastructure</li><li>function app</li></ul>  |
-| `env.GOOGLE_CICD_SERVICE_ACCOUNT`   | OpenId Connect (OIDC) based Federated Identity Credentials | <ul><li>roles/storage.admin</li><li>roles/serviceusage.serviceUsageAdmin</li><li>roles/iam.serviceAccountCreator</li></ul>                                                     | Deploy cloud resources: <ul><li>core infrastructure</li><li>cloud storage</li></ul> |
-| `env.AZURE_FUNCAPP_SERVICE_ACCOUNT` | Workload identity federation or JSON key file              | <ul><li>Storage Blob Data Reader on Storage Account</li></ul>                                                                                                                  | Read Blob Contents to copy                                                          |
+| System Identities                 | Authentication                                             | Authorization                                                                                                                                                                  | Purpose                                                                             |
+| --------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `env.AZURE_CICD_CLIENT_NAME`      | OpenId Connect (OIDC) based Federated Identity Credentials | Subscription Contributor access<br>Microsoft Graph API admin consent Permissions: <ul><li>Directory.ReadWrite.All</li><li>User.Invite.All</li><li>User.ReadWrite.All</li></ul> | Deploy cloud resources: <ul><li>core infrastructure</li><li>function app</li></ul>  |
+| `env.GOOGLE_CICD_SERVICE_ACCOUNT` | OpenId Connect (OIDC) based Federated Identity Credentials | <ul><li>roles/storage.admin</li><li>roles/serviceusage.serviceUsageAdmin</li><li>roles/iam.serviceAccountCreator</li></ul>                                                     | Deploy cloud resources: <ul><li>core infrastructure</li><li>cloud storage</li></ul> |
+| `env.AZURE_APP_SERVICE_CLIENT`    | Workload identity federation or JSON key file              | <ul><li>Storage Blob Data Reader on Storage Account</li></ul>                                                                                                                  | Read Blob Contents to copy                                                          |
 
 ```bash
 # load .env vars (optional)
@@ -112,6 +127,8 @@ gcloud auth activate-service-account "${GOOGLE_CICD_SERVICE_ACCOUNT}" --key-file
 gcloud auth list
 ./scripts/gcp_provision.sh --project "$GOOGLE_PROJECT_ID" --environment "$ENV"
 
+# Add permissions to the function app service account
+./scripts/az_permissions.sh --name "$APP_NAME" --environment "$ENV"
 ```
 
 ## Deployment
