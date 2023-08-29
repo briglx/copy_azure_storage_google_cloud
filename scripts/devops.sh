@@ -169,6 +169,9 @@ deploy(){
     # Create the destination directory if it doesn't exist
     mkdir -p "$(dirname "$zip_file_path")"
 
+    # Copy .env to local
+    "${PROJ_ROOT_PATH}"/scripts/copy_env.sh
+
     # Create an array for exclusion patterns
     exclude_patterns=()
     while IFS= read -r pattern; do

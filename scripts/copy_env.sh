@@ -12,7 +12,8 @@ validate_parameters(){
     # Check if the JSON file exists
     if [ ! -f "$LOCAL_SETTINGS_JSON" ]; then
         echo "JSON file '$LOCAL_SETTINGS_JSON' not found."
-        exit 1
+        echo "Creating new $LOCAL_SETTINGS_JSON from local.settings.example.json"
+        cp "${PROJ_ROOT_PATH}/functions/local.settings.example.json" "${LOCAL_SETTINGS_JSON}" 
     fi
 
     # Check if the .env file exists
