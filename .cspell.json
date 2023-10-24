@@ -50,6 +50,7 @@
     "getopt",
     "googleapis",
     "gserviceaccount",
+    "gsutil",
     "iamcredentials",
     "isort",
     "keyring",

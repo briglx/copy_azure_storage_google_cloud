@@ -127,6 +127,12 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Get data for test file %s", file_url)
     data = await fetch_data(file_url)
     # data = await fetch_data_by_http(url, headers)
+   
+    # Write data to local file
+    with open("data.txt", "w") as f:
+        f.write(data)
+
+    #TODO: call ./scripts/copy_to_gcp.sh
 
     if data and "Error" not in data:
         logging.info("No error in data")
