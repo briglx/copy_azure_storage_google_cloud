@@ -5,36 +5,9 @@
       "type": "func",
       "label": "func: host start",
       "command": "host start",
-      "isBackground": true,
-      "dependsOn": "npm install (functions)",
-      "options": {
-        "cwd": "${workspaceFolder}/functions"
-      }
-    },
-    {
-      "type": "func",
-      "label": "python func: host start",
-      "command": "host start",
-      "isBackground": true,
       "problemMatcher": "$func-python-watch",
+      "isBackground": true,
       "dependsOn": "pip install (functions)",
-      "options": {
-        "cwd": "${workspaceFolder}/functions"
-      }
-    },
-    {
-      "type": "shell",
-      "label": "npm install (functions)",
-      "command": "npm install",
-      "options": {
-        "cwd": "${workspaceFolder}/functions"
-      }
-    },
-    {
-      "type": "shell",
-      "label": "npm prune (functions)",
-      "command": "npm prune --production",
-      "problemMatcher": [],
       "options": {
         "cwd": "${workspaceFolder}/functions"
       }
@@ -42,22 +15,20 @@
     {
       "label": "pip install (functions)",
       "type": "shell",
+      
       "osx": {
-        "command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r ${workspaceFolder}/functions/requirements.txt"
+        "command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
       },
       "windows": {
-        "command": "${config:azureFunctions.pythonVenv}\\Scripts\\python -m pip install -r ${workspaceFolder}/functions/requirements.txt"
+        "command": "${config:azureFunctions.pythonVenv}/Scripts/python -m pip install -r requirements.txt"
       },
       "linux": {
-        "command": ". ${config:azureFunctions.pythonVenv}/bin/activate && python -m pip install -r ${workspaceFolder}/functions/requirements.txt"
+        "command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
       },
-      "problemMatcher": []
-    },
-    {
-      "label": "copy .env values to local.settings.json",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/copy_env.sh",
-      "problemMatcher": []
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/functions"
+      }
     }
   ]
 }
