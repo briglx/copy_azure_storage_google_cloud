@@ -82,10 +82,10 @@ create_app_sp(){
         # Create an Azure Active Directory application and a service principal.
         app_id=$(az ad app create --display-name "${env_name}_${app_name}" --query id -o tsv)
         app_client_id=$(az ad app list --display-name "${env_name}_${app_name}" --query [].appId -o tsv)
-        
+
         # Create a service principal for the Azure Active Directory application.
         app_sp=$(az ad sp create --id "$app_id")
-        app_sp_id=$(jq -r '.id' <<< "$app_sp")
+        app_sp_id=$(jq -r '.objectId' <<< "$app_sp")
 
         # Create a secret for the service principal.
         app_client_secret=$(az ad app credential reset \
@@ -95,7 +95,7 @@ create_app_sp(){
 
         # Save variables to .env
         if [ -f "$ENV_FILE" ]; then
-            
+
             echo "Save Azure variables to ${ENV_FILE}"
             {
                 echo ""
@@ -105,9 +105,9 @@ create_app_sp(){
                 echo "AZURE_APP_SERVICE_CLIENT_ID=$app_client_id"
                 echo "AZURE_APP_SERVICE_CLIENT_SECRET=$app_client_secret"
             }>> "$ENV_FILE"
-        
+
         fi
-        
+
         if [ -n "$AZ_SCRIPTS_OUTPUT_PATH" ]; then
             outputJson=$(jq -n \
                     --arg applicationObjectId "$app_id" \
@@ -118,7 +118,7 @@ create_app_sp(){
             echo "$outputJson" > "$AZ_SCRIPTS_OUTPUT_PATH"
         fi
 
-        
+
     elif [ "$CLOUD" == "google" ]; then
         gcloud iam service-accounts create "$app_name" \
             --description="Service account for $app_name" \

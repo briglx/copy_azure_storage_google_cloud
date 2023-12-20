@@ -40,27 +40,6 @@ flowchart LR
 - [Visual Studio Code](https://code.visualstudio.com/) - The local IDE experience.
 - [GitHub Codespaces](https://github.com/features/codespaces) - The cloud IDE experience.
 
-# Development Environment
-
-1. Fork this repository.
-2. Create a new GitHub Codespaces from your fork. This will automatically provision a new Codespaces with all the required dependencies preinstalled and configured.
-3. Open a new terminal and run `npm install && npm run prepare`
-
-Run Local Functions assumes you have already provisioned and setup the system identities
-
-```bash
-# load .env vars (optional)
-[ ! -f .env ] || eval "export $(grep -v '^#' .env | xargs)"
-# or this version allows variable substitution and quoted long values
-[ -f .env ] && while IFS= read -r line; do [[ $line =~ ^[^#]*= ]] && eval "export $line"; done < .env
-
-# Copy .env values to local.settings.json
-./scripts/copy_env.sh
-
-cd ./functions
-func host start
-```
-
 # Deploy Resources
 
 This project uses scripts to provision infrastructure, package, and deploy the application to Azure and Google Cloud.
@@ -72,6 +51,18 @@ This project uses scripts to provision infrastructure, package, and deploy the a
 - GitHub Account
 - Azure CLI
 - Google Cloud CLI
+
+**Install Azure CLI**
+
+```bash
+# Check if installed
+az --version
+
+# Install azure cli
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+az --version
+```
 
 ## Create System Identities
 
@@ -99,9 +90,8 @@ gcloud auth login --quiet
 
 # Set IAM project as default
 gcloud config set project "$GOOGLE_IAM_PROJECT_ID"
-# Create Google CICD system identity
+# Create Google CICD system identity and configure workload identity federation with GitHub Actions
 ./scripts/create_cicd_sp.sh --cloud google
-
 ```
 
 ## Provisioning
@@ -146,6 +136,156 @@ gcloud auth list
 ./scripts/devops.sh event --name "$APP_NAME" --environment "$ENV_NAME"
 ```
 
+# Development
+
+You'll need to set up a development environment if you want to develop a new feature or fix issues.
+
+The project uses a docker based devcontainer to ensure a consistent development environment.
+
+- Open the project in VSCode and it will prompt you to open the project in a devcontainer. This will have all the required tools installed and configured.
+
+## Setup local dev environment
+
+If you want to develop outside of a docker devcontainer you can use the following commands to setup your environment.
+
+- Install Python
+- Install Node
+- Install Azure CLI
+- Install Azure Functions Core Tools
+- Install Google Cloud CLI
+- Install Bicep
+- Configure linting and formatting tools
+
+```bash
+# Configure the environment variables. Copy `example.env` to `.env` and update the values
+cp example.env .env
+
+# load .env vars
+[ ! -f .env ] || export $(grep -v '^#' .env | xargs)
+# or this version allows variable substitution and quoted long values
+[ -f .env ] && while IFS= read -r line; do [[ $line =~ ^[^#]*= ]] && eval "export $line"; done < .env
+
+# Create and activate a python virtual environment
+python3 -m venv ./functions/.venv
+source ./functions/.venv/bin/activate
+
+# Install python requirements
+pip install -r ./functions/requirements_dev.txt
+
+# Install Node
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+source /root/.bashrc && nvm install v18.17.0 && npm init -y
+
+# Configure Azure CLI and authenticate
+az --version
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+# login to azure cli
+az login --tenant $TENANT_ID
+
+# Install Azure Functions Core Tools
+./install_az_func_core_tools.sh
+
+# Install Google Cloud CLI
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && apt-get update -y && apt-get install google-cloud-cli -y
+
+# Install bicep
+az bicep install
+
+# Configure linting and formatting tools
+sudo apt-get update
+sudo apt-get install -y shellcheck
+pre-commit install
+
+# Npm install
+npm install
+```
+
+## Tasks
+
+The devcontainer comes with some useful tasks to help you with development, you can start these tasks by opening the command palette with `Shift`+`Command`+`P`(Mac) / `Ctrl`+`Shift`+`P` (Windows/Linux) and select `Tasks: Run Task` then select the task you want to run.
+
+- `Run Function App` - Run the function app locally.
+- `Install Requirements` - Install python dependencies to function folder.
+
+If you want to run these tasks outside of the devcontainer you can use the following commands.
+
+```bash
+# Run function app. This assumes you have already provisioned and setup the system identities.
+# Copy .env values to local.settings.json
+./scripts/copy_env.sh
+cd ./functions
+func host start
+```
+
+## Style Guidelines
+
+This project enforces quite strict [PEP8](https://www.python.org/dev/peps/pep-0008/) and [PEP257 (Docstring Conventions)](https://www.python.org/dev/peps/pep-0257/) compliance on all code submitted.
+
+We use [Black](https://github.com/psf/black) for uncompromising code formatting.
+
+Summary of the most relevant points:
+
+- Comments should be full sentences and end with a period.
+- [Imports](https://www.python.org/dev/peps/pep-0008/#imports) should be ordered.
+- Constants and the content of lists and dictionaries should be in alphabetical order.
+- It is advisable to adjust IDE or editor settings to match those requirements.
+
+### Use new style string formatting
+
+Prefer [f-strings](https://docs.python.org/3/reference/lexical_analysis.html#f-strings) over `%` or `str.format`.
+
+```python
+#New
+f"{some_value} {some_other_value}"
+# Old, wrong
+"{} {}".format("New", "style")
+"%s %s" % ("Old", "style")
+```
+
+One exception is for logging which uses the percentage formatting. This is to avoid formatting the log message when it is suppressed.
+
+```python
+_LOGGER.info("Can't connect to the web service %s at %s", string1, string2)
+```
+
+## Testing
+
+Ideally, all code is checked to verify the following:
+
+- All the unit tests pass
+- All code passes the checks from the linting tools
+
+To run the linters, run the following commands:
+
+```bash
+# Use pre-commit scripts to run all linting
+pre-commit run --all-files
+
+# Run a specific linter via pre-commit
+pre-commit run --all-files codespell
+
+# Run linters outside of pre-commit
+isort .
+codespell .
+black .
+flake8 .
+bandit -c pyproject.toml -r .
+pydocstyle .
+npx prettier . --check
+shellcheck -x ./script/*.sh
+pylint --ignore-paths="^functions/.venv/.*$" ./functions/
+
+# Check for window line endings
+find **/ -not -type d -exec file "{}" ";" | grep CRLF
+# Fix with any issues with:
+# sed -i.bak 's/\r$//' ./path/to/file
+# Or Remove them
+# find . -name "*.Identifier" -exec rm "{}" \;
+
+# Optionally use Node to run all linters
+npm run lint
+```
+
 # Architecture Design Decisions
 
 ## Blob Storage trigger vs Event Grid trigger
@@ -156,7 +296,7 @@ If you're using earlier versions of the Blob Storage trigger with Azure Function
 
 Google's auth github actions recommends:
 
-> using Workload Identity Federation instead as exporting a long-lived Service Account Key JSON credential poses a security risk.
+> use Direct Workload Identity Federation instead of exporting a long-lived Service Account Key JSON credential as this poses a security risk.
 
 # References
 

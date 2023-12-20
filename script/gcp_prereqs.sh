@@ -18,7 +18,7 @@ create_projects(){
     gcloud services enable cloudresourcemanager.googleapis.com --project "${GOOGLE_PROJECT_ID}"
     gcloud services enable cloudbilling.googleapis.com --project "${GOOGLE_PROJECT_ID}"
     gcloud services enable iamcredentials.googleapis.com --project "${GOOGLE_PROJECT_ID}"
-    
+
     # Enable Billing
     gcloud beta billing projects link "${GOOGLE_PROJECT_ID}" --billing-account="${GOOGLE_BILLING_ACCOUNT_ID}"
 
@@ -40,7 +40,7 @@ configure_workload_identity_federation(){
     if [[ -n "$pool_id" ]]
     then
         echo "Workload Identity Pool ${pool_name} already exists"
-    else 
+    else
         # Create a Workload Identity Pool
         gcloud iam workload-identity-pools create "${pool_name}" \
             --location "global" \
@@ -57,7 +57,7 @@ configure_workload_identity_federation(){
     if [[ -n "$provider_id" ]]
     then
         echo "Azure identity provider already exists"
-    else 
+    else
         # Create an Azure identity provider
         gcloud iam workload-identity-pools providers create-oidc \
             --location "global" \

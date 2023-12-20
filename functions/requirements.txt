@@ -6,4 +6,6 @@ aiohttp==3.8.5
 asyncio==3.4.3
 azure-functions==1.15.0
 azure-storage-blob==12.17.0
+google-auth==2.25.2
+google-cloud-storage==2.14.0
 msal==1.23.0

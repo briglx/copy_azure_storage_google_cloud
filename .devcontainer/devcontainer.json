@@ -18,16 +18,16 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "ms-azuretools.vscode-bicep",
-        "IronGeek.vscode-env",
-        "timonwong.shellcheck",
-        "ms-azuretools.vscode-docker",
-        "ms-azuretools.vscode-azurefunctions",
         "esbenp.prettier-vscode",
-        "ms-azuretools.vscode-bicep",
-        "EditorConfig.EditorConfig",
         "GitHub.copilot",
-        "hediet.vscode-drawio"
+        "hediet.vscode-drawio",
+        "IronGeek.vscode-env",
+        "ms-azuretools.vscode-azurefunctions",
+        "ms-azuretools.vscode-bicep",
+        "ms-azuretools.vscode-docker",
+        "ms-python.vscode-pylance",
+        "tamasfe.even-better-toml",
+        "timonwong.shellcheck"
       ]
     }
   },
@@ -36,5 +36,5 @@
     "memory": "8gb",
     "storage": "32gb"
   },
-  "postCreateCommand": "pip3 install -r ./functions/requirements.txt"
+  "postCreateCommand": "pre-commit install && npm install && pre-commit run --all-files && git config diff.wsErrorHighlight all"
 }

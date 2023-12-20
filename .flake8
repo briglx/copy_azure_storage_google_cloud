@@ -1,4 +1,5 @@
 [flake8]
+exclude = .git,__pycache__,functions/.venv,build,dist,node_modules
 max-line-length = 80
 select = C,E,F,W,B,B950
 ignore = E203, E501, W503

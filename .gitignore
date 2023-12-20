@@ -168,3 +168,5 @@ gha-creds-*.json
 creds-*.json
 local.settings.json
 local.settings.json.backup.*.json
+clientLibraryConfig-dev-azure-wip-pool.json
+.python_packages

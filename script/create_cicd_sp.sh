@@ -39,8 +39,26 @@ show_help() {
     echo
 }
 
+update_gitignore(){
+    local entry="$1"
+    local gitignore_file=".gitignore"
+    local comment="# Entry from create_cicd_sp.sh. Generated on ${iso_date_utc}"
+
+    if [ -e "$gitignore_file" ]; then
+        if grep -q "^$entry" "$gitignore_file"; then
+            echo "$entry already exists in $gitignore_file"
+        else
+            echo "$entry doesn't exist in $gitignore_file. Adding entry..."
+            echo -e "$comment\n$entry" >> "$gitignore_file"
+            echo "Entry added successfully."
+        fi
+    else
+        echo "Error: $gitignore_file not found."
+    fi
+}
+
 validate_parameters(){
- 
+
     # Check CICD_CLIENT
     if [ -z "$CICD_CLIENT" ]
     then
@@ -130,7 +148,7 @@ create_azure_sp(){
     # Create an Azure Active Directory application and a service principal.
     app_id=$(az ad app create --display-name "$app_name" --query id -o tsv)
     app_client_id=$(az ad app list --display-name "$app_name" --query [].appId -o tsv)
-    
+
     # Create a service principal for the Azure Active Directory application.
     az ad sp create --id "$app_id"
 
@@ -162,7 +180,7 @@ create_azure_sp(){
 }
 
 create_google_sp(){
-    
+
     local project_id="${GOOGLE_IAM_PROJECT_ID}"
     local target_project_id="${GOOGLE_PROJECT_ID}"
     local service_account_name="${CICD_CLIENT}"
@@ -181,19 +199,19 @@ create_google_sp(){
 
     # Download the service account key
     gcloud iam service-accounts keys create "${creds_file}" --iam-account "${service_account_email}" --project "${project_id}"
+    update_gitignore "${creds_file}"
 
     # Grant Service Account access to Cloud Resources ...
     gcloud projects add-iam-policy-binding "${target_project_id}" --member=serviceAccount:"${service_account_email}" --role=roles/storage.admin
     gcloud projects add-iam-policy-binding "${target_project_id}" --member=serviceAccount:"${service_account_email}" --role=roles/serviceusage.serviceUsageAdmin
     gcloud projects add-iam-policy-binding "${target_project_id}" --member=serviceAccount:"${service_account_email}" --role=roles/iam.serviceAccountCreator
 
-    
     # Check if the Workload Identity Pool already exists
     pool_id=$(gcloud iam workload-identity-pools describe "${pool_name}" --project "${project_id}" --location "global" --format "value(name)")
     if [[ -n "$pool_id" ]]
     then
         echo "Workload Identity Pool ${pool_name} already exists"
-    else 
+    else
         # Create a Workload Identity Pool
         gcloud iam workload-identity-pools create "${pool_name}" --project "${project_id}" --location "global" --description "CICD Identity Pool"
 
@@ -204,8 +222,6 @@ create_google_sp(){
     # Grant users access to this service account
     gcloud projects add-iam-policy-binding "${target_project_id}" --member=serviceAccount:"principalSet://iam.googleapis.com/projects/${project_id}/locations/global/workloadIdentityPools/${pool_name}/*" --role=roles/iam.serviceAccountUser
 
-
-    
     # Check if the Workload Identity Pool Provider already exists
     provider_id=$(gcloud iam workload-identity-pools providers describe "${pool_provider_name}" --project "${project_id}" --location "global" --workload-identity-pool "${pool_name}" --format "value(name)")
     if [[ -n "$provider_id" ]]
@@ -220,7 +236,8 @@ create_google_sp(){
             --display-name="${provider_display_name}" \
             --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
             --issuer-uri="https://token.actions.githubusercontent.com"
-    
+            # --attribute-condition="assertion.repository_owner=='$GITHUB_ORG'" \
+
         # Grant Workload Identity Provider authentications from the GitHub repository to impersonate the service account.
         gcloud iam service-accounts add-iam-policy-binding "${service_account_email}" \
             --project="${project_id}" \

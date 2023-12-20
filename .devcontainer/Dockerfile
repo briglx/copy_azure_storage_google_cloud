@@ -1,6 +1,21 @@
 FROM mcr.microsoft.com/devcontainers/python:3.10-bullseye
 
-RUN apt-get -y update && apt-get install -y ca-certificates curl apt-transport-https lsb-release gnupg vim unzip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release \
+        shellcheck \
+        unzip \
+        vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Installing Node
+SHELL ["/bin/bash", "--login", "-i", "-c"]
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+RUN source /root/.bashrc && nvm install v18.17.0 && npm init -y
+SHELL ["/bin/bash", "--login", "-c"]
 
 # Install Azure CLI latest (2.51.0)
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
@@ -16,10 +31,10 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 RUN az bicep install
 
 # Helpful aliases
-RUN echo 'alias ll='"'"'ls $LS_OPTIONS -al'"'"'' >> /etc/bash.bashrc 
+RUN echo 'alias ll='"'"'ls $LS_OPTIONS -al'"'"'' >> /etc/bash.bashrc
 
-# Copy requirements.txt
+# Install Python requirements
+RUN python -m pip install --upgrade pip
 COPY ./functions/requirements.txt .
-
-# Install requirements.txt
-RUN pip3 install -r requirements.txt
+COPY ./functions/requirements_dev.txt .
+RUN python -m pip install -r ./requirements_dev.txt

@@ -1,4 +1,5 @@
 {
   "azureFunctions.projectRuntime": "~4",
   "azureFunctions.pythonVenv": "/usr/local/",
+  "shellcheck.useWorkspaceRootAsCwd": true
 }

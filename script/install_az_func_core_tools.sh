@@ -7,10 +7,10 @@ set -e
 setup() {
 
     export DEBIAN_FRONTEND=noninteractive
-   
+
     # Use env var DEBIAN_VERSION for the package dist name if provided
     if [[ -z $DEBIAN_VERSION ]]; then
-        DEBIAN_VERSION=$(lsb_release -rs)        
+        DEBIAN_VERSION=$(lsb_release -rs)
     fi
 
     set -v
@@ -20,7 +20,7 @@ setup() {
         exit 1
     fi
     # Download prod.list
-    curl -sLS https://packages.microsoft.com/config/debian/$DEBIAN_VERSION/prod.list | tee /etc/apt/sources.list.d/microsoft-prod.list > /dev/null
+    curl -sLS "https://packages.microsoft.com/config/debian/$DEBIAN_VERSION/prod.list" | tee /etc/apt/sources.list.d/microsoft-prod.list > /dev/null
     apt-get update
     set +v
 
@@ -28,4 +28,4 @@ setup() {
 
 }
 
-setup 
+setup

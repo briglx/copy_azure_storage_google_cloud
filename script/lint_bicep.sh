@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 ###################################################################
 # Run bicep linting on passed in files or glob patterns.
-# Usage: bicep_glob.sh [OPTIONS] SRC 
+# Usage: bicep_glob.sh [OPTIONS] SRC
 #
 # Params
 #   files     One or more bicep files.
@@ -21,7 +21,7 @@ NC='\033[0m' # No Color
 lint_file() {
   local file="$1"
   local output
-  
+
   # Check the exit status of the command directly
   if output=$(az bicep build --file "$file" --stdout 2>&1); then
     # Print in green color for success

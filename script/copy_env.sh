@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 ######################################################
 # Copy .env variables to function app env file:
-# local.settings.json.
+# local.settings.json
 ######################################################
 
 # Stop on errors
@@ -13,7 +13,7 @@ validate_parameters(){
     if [ ! -f "$LOCAL_SETTINGS_JSON" ]; then
         echo "JSON file '$LOCAL_SETTINGS_JSON' not found."
         echo "Creating new $LOCAL_SETTINGS_JSON from local.settings.example.json"
-        cp "${PROJ_ROOT_PATH}/functions/local.settings.example.json" "${LOCAL_SETTINGS_JSON}" 
+        cp "${PROJ_ROOT_PATH}/functions/local.settings.example.json" "${LOCAL_SETTINGS_JSON}"
     fi
 
     # Check if the .env file exists
@@ -64,9 +64,9 @@ update_values(){
             env_vars["$key"]="$value"
 
             echo "Adding $key = $value"
-            
+
             json_data=$(jq --arg key "$key" --arg value "$value" '.Values[$key] = $value' <<< "$json_data")
-    
+
         fi
     done < "$ENV_FILE"
 

@@ -2,33 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Attach using Process Id",
-      "type": "python",
-      "request": "attach",
-      "processId": "${command:pickProcess}",
-      "justMyCode": true
-    },
-    {
-      "name": "Attach to Node Functions",
-      "type": "node",
-      "request": "attach",
-      "port": 9229,
-      "preLaunchTask": "func: host start"
-    },
-    {
       "name": "Attach to Python Functions",
       "type": "python",
       "request": "attach",
-      // "port": 9091,
-      "port": 7071,
-      // "host": "localhost",
-      "preLaunchTask": "python func: host start",
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}/HttpTrigger",
-          "remoteRoot": "/home/site/wwwroot"
-        }
-      ]
+      "port": 9091,
+      "preLaunchTask": "func: host start"
     }
   ]
 }

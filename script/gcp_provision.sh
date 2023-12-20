@@ -7,7 +7,7 @@
 set -e
 
 validate_parameters(){
-    
+
     # Check GOOGLE_PROJECT_ID
     if [ -z "$GOOGLE_PROJECT_ID" ]
     then
@@ -15,7 +15,7 @@ validate_parameters(){
         show_help
         exit 1
     fi
-    
+
 }
 
 provision(){
@@ -26,8 +26,8 @@ provision(){
     local service_account_description="Service account used by Azure function App"
 
     # gcloud config set account "$GOOGLE_ACCOUNT"
-    gcloud config set project "${project_id}" --quiet 
-    
+    gcloud config set project "${project_id}" --quiet
+
     # Create Storage Bucket
     gcloud storage buckets create "gs://${GOOGLE_BUCKET_NAME}" --project="${project_id}" --location="${GOOGLE_REGION}" --quiet
 
@@ -39,8 +39,21 @@ provision(){
         --role="roles/iam.workloadIdentityUser" \
         --member="principalSet://iam.googleapis.com/projects/${project_id}/locations/global/workloadIdentityPools/${AZURE_TENANT_NAME}-identity-pool/*" \
         --project="${project_id}"
-        
-        
+
+    # # Save variables to .env
+    # if [ -f "$ENV_FILE" ]; then
+
+    #     echo "Save GCP variables to ${ENV_FILE}"
+    #     {
+    #         echo ""
+    #         echo "# Script create_app_sp.sh output"
+    #         echo "# Generated on ${ISO_DATE_UTC}"
+    #         echo "AZURE_APP_SERVICE_ID=$app_id"
+    #         echo "AZURE_APP_SERVICE_CLIENT_ID=$app_client_id"
+    #         echo "AZURE_APP_SERVICE_CLIENT_SECRET=$app_client_secret"
+    #     }>> "$ENV_FILE"
+    # fi
+
 }
 
 validate_parameters

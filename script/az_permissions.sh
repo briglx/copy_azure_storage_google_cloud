@@ -2,7 +2,7 @@
 ######################################################
 # Set azure permissions
 # Globals:
-#   
+#
 #   AZURE_APP_SERVICE_CLIENT_ID
 #   STORAGE_ACCOUNT_ID
 ######################################################

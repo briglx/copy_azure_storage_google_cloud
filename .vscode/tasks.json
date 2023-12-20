@@ -3,19 +3,18 @@
   "tasks": [
     {
       "type": "func",
-      "label": "func: host start",
+      "label": "Run Function App",
       "command": "host start",
       "problemMatcher": "$func-python-watch",
       "isBackground": true,
-      "dependsOn": "pip install (functions)",
+      "dependsOn": ["Install all Requirements"],
       "options": {
         "cwd": "${workspaceFolder}/functions"
       }
     },
     {
-      "label": "pip install (functions)",
+      "label": "Install Requirements",
       "type": "shell",
-      
       "osx": {
         "command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
       },
@@ -29,6 +28,21 @@
       "options": {
         "cwd": "${workspaceFolder}/functions"
       }
+    },
+    {
+      "label": "Code Linting",
+      "type": "shell",
+      "command": "pre-commit run --all-files",
+      "dependsOn": ["Install Requirements"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
     }
   ]
 }

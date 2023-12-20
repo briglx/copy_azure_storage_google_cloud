@@ -17,10 +17,10 @@ process_files(){
     local search_pattern="$1"
     local file_count=0
     # local paths=("$@")
-    local lint_script="./scripts/lint_bicep.sh"
+    local lint_script="./script/lint_bicep.sh"
 
     if [ -f "$lint_script" ]; then
-        # shellcheck source=./scripts/lint_bicep.sh
+        # shellcheck source=./script/lint_bicep.sh
         source "$lint_script"
 
         if [[ $search_pattern == *[*?]* ]]; then
@@ -41,7 +41,7 @@ process_files(){
                 ((file_count++))
             done
         fi
-       
+
         # lint_bicep "${paths[@]}"
 
         # local exit_code=$?
@@ -54,7 +54,7 @@ process_files(){
 
         # return $exit_code
         echo "$0: Files checked: $file_count"
-    
+
     else
         echo "ERROR: File $lint_script does not exist."
         exit 1

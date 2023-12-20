@@ -1,12 +1,16 @@
 """Function App code for the Azure Functions Python worker."""
+import asyncio
 import json
 import logging
 import os
+import subprocess
+import uuid
 from urllib.parse import urlparse
 
 import aiohttp
 import azure.functions as func
 import msal
+from google.cloud import storage
 
 # from azure.storage.blob.aio import BlobClient
 
@@ -51,7 +55,10 @@ async def get_access_token() -> str:
     authority = f"https://login.microsoftonline.com/{tenant_id}"
     scope = ["https://storage.azure.com/.default"]
 
-    logging.info("Acquire Confidential Client Application access token for client_id %s...", client_id)
+    logging.info(
+        "Acquire Confidential Client Application access token for client_id %s...",
+        client_id,
+    )
     client_app = msal.ConfidentialClientApplication(
         client_id, authority=authority, client_credential=client_credential
     )
@@ -111,11 +118,118 @@ async def fetch_data_by_http(url, headers):
             return response_text
 
 
-@app.function_name(name="HttpTriggerMain")
-@app.route(route="main")
-async def main(req: func.HttpRequest) -> func.HttpResponse:
+def copy_to_gcp_via_shell():
+    """Copy data to GCP."""
+    shell_script_path = "./script/copy_to_bucket.sh"
+
+    try:
+        # Call the shell script using subprocess
+        subprocess.run([shell_script_path], check=True)
+        print("Shell script executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing the shell script: {e}")
+
+
+# async def get_dwif_credentials(target_principal, dwif_token_file):
+#     """Get DWIF credentials."""
+#     # Read the DWIF token from the file
+#     with open(dwif_token_file, "r") as token_file:
+#         dwif_token = token_file.read().strip()
+
+#         from google.oauth2 import service_account
+
+#         target_scopes = ["https://www.googleapis.com/auth/devstorage.read_only"]
+#         source_credentials = service_account.Credentials.from_service_account_file(
+#             dwif_token_file, scopes=target_scopes
+#         )
+
+#         logging.info("source_credentials: %s", source_credentials)
+
+#         # Create DWIF credentials
+#         target_principal_credentials = (
+#             impersonated_credentials.Credentials.from_service_account_file(
+#                 dwif_token, target_principal
+#             )
+#         )
+
+#         return target_principal_credentials
+
+
+# async def copy_to_bucket(local_file_path):
+#     """Upload a local file to a bucket."""
+#     GOOGLE_BUCKET_NAME = os.environ.get("GOOGLE_BUCKET_NAME")
+#     GOOGLE_CICD_SERVICE_ACCOUNT = os.environ.get("GOOGLE_CICD_SERVICE_ACCOUNT")
+#     GOOGLE_CICD_CLIENT_KEY_FILE = os.environ.get("GOOGLE_CICD_CLIENT_KEY_FILE")
+
+#     file_name = os.path.basename(local_file_path)
+#     # destination=f"gs://{GOOGLE_BUCKET_NAME}/{file_name}"
+
+#     logging.info(
+#         "Uploading %s to %s/%s", local_file_path, GOOGLE_BUCKET_NAME, file_name
+#     )
+#     logging.info("GOOGLE_CICD_SERVICE_ACCOUNT: %s", GOOGLE_CICD_SERVICE_ACCOUNT)
+#     logging.info("GOOGLE_CICD_CLIENT_KEY_FILE: %s", GOOGLE_CICD_CLIENT_KEY_FILE)
+
+#     # Get DWIF credentials
+#     credentials = await get_dwif_credentials(
+#         GOOGLE_CICD_SERVICE_ACCOUNT, GOOGLE_CICD_CLIENT_KEY_FILE
+#     )
+
+#     logging.info("credentials: %s", credentials)
+
+#     # Create a Storage client with DWIF credentials
+#     client = storage.Client(credentials=credentials)
+
+#     logging.info("client: %s", client)
+
+#     # Upload the file to the bucket
+#     bucket = client.get_bucket(GOOGLE_BUCKET_NAME)
+#     blob = bucket.blob(file_name)
+#     blob.upload_from_filename(local_file_path)
+
+#     logging.info(
+#         "File %s uploaded to %s/%s", local_file_path, GOOGLE_BUCKET_NAME, file_name
+#     )
+
+
+async def copy_to_bucket_via_sdk(source_file_name, destination_blob_name):
+    """Copy file to bucket using SDK."""
+    bucket_name = os.environ.get("GOOGLE_BUCKET_NAME")
+    # GOOGLE_CICD_SERVICE_ACCOUNT = os.environ.get("GOOGLE_CICD_SERVICE_ACCOUNT")
+    key_file = os.environ.get("GOOGLE_CICD_CLIENT_KEY_FILE")
+
+    # dest_uri=f"gs://{bucket_name}/{file_name}"
+
+    logging.info(
+        "Uploading %s to %s/%s",
+        source_file_name,
+        bucket_name,
+        destination_blob_name,
+    )
+    # logging.info("GOOGLE_CICD_SERVICE_ACCOUNT: %s", GOOGLE_CICD_SERVICE_ACCOUNT)
+    logging.info("GOOGLE_CICD_CLIENT_KEY_FILE: %s", key_file)
+
+    # key_path = 'path/to/your/service-account-key.json'
+
+    # Create a storage client using the service account key
+    client = storage.Client.from_service_account_json(key_file)
+    bucket = client.get_bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+    blob.upload_from_filename(source_file_name)
+
+    logging.info(
+        "File %s uploaded to %s/%s",
+        source_file_name,
+        bucket_name,
+        destination_blob_name,
+    )
+
+
+@app.route(route="test")
+async def test_function(req: func.HttpRequest) -> func.HttpResponse:
     """Azure Function triggered by HTTP request."""
     logging.info("HttpTriggerMain triggered")
+    temp_file_name = str(uuid.uuid4()) + ".tmp"
 
     # Read file_url from request query string
     file_url = req.params.get("file_url")
@@ -127,15 +241,26 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Get data for test file %s", file_url)
     data = await fetch_data(file_url)
     # data = await fetch_data_by_http(url, headers)
-   
-    # Write data to local file
-    with open("data.txt", "w") as f:
-        f.write(data)
-
-    #TODO: call ./scripts/copy_to_gcp.sh
 
     if data and "Error" not in data:
         logging.info("No error in data")
+
+        logging.info("data: %s", data)
+        logging.info("Writing data to local file")
+
+        await asyncio.sleep(5)
+        # Write data to local file
+        with open(temp_file_name, "w", encoding="utf-8") as f:
+            f.write(data)
+
+        dest_file_name = os.path.basename(file_url)
+        logging.info("Copy %s to %s", temp_file_name, dest_file_name)
+        await copy_to_bucket_via_sdk(temp_file_name, dest_file_name)
+
+        # Clean up temp file
+        if os.path.isfile(temp_file_name):
+            os.remove(temp_file_name)
+
         return func.HttpResponse(data, mimetype="text/plain")
 
     if data and "Error" in data:
@@ -171,10 +296,3 @@ async def process_blob_events(event: func.EventGridEvent):
     data = await fetch_data(file_url)
 
     logging.info("data: %s", data)
-
-    # storage_account, container_name, blob_name = parse_azure_storage_url(file_url)
-    # logging.info("storage_account: %s", storage_account)
-    # logging.info("container_name: %s", container_name)
-    # logging.info("blob_name: %s", blob_name)
-
-    # asyncio.run(fetch_data_by_sdk(container_name, blob_name))

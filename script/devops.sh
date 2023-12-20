@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #########################################################################
 # Onboard and manage application on cloud infrastructure.
-# Usage: devops.sh [COMMAND{provision | deploy}] 
+# Usage: devops.sh [COMMAND{provision | deploy}]
 # Globals:
 #   ENV_NAME
 #   AZURE_LOCATION
@@ -107,6 +107,7 @@ provision(){
     echo "Deploying ${deployment_name} in $location with ${additional_parameters[*]}"
 
     az deployment sub create \
+        --subscription "$AZURE_SUBSCRIPTION_ID" \
         --name "${deployment_name}" \
         --location "$location" \
         --template-file "${PROJ_ROOT_PATH}/infra/main.bicep" \
@@ -120,12 +121,12 @@ provision(){
         echo ""
         echo "# Deployment output variables"
         echo "# Generated on ${ISO_DATE_UTC}"
-        echo "$output_variables" | jq -r 'to_entries[] | "\(.key | ascii_upcase )=\(.value.value)"' 
+        echo "$output_variables" | jq -r 'to_entries[] | "\(.key | ascii_upcase )=\(.value.value)"'
     }>> "$env_file"
 
 
     # Create Google Cloud Resources
-    
+
 
 }
 
@@ -196,7 +197,7 @@ deploy(){
 
     # Update environment variables to function app
     update_environment_variables
-    
+
     echo "Cleaning up"
     rm "${zip_file_path}"
 
@@ -246,7 +247,7 @@ create_event_subscription(){
     fi
 
     additional_parameters+=("createEventSubscription=true")
-    
+
     # Create Event Subscription
     echo "Create Event Subscription"
 
